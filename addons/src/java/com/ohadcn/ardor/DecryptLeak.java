@@ -1,5 +1,10 @@
 package com.ohadcn.ardor;
 
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 import java.io.FileInputStream;
@@ -8,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -44,14 +51,15 @@ public class DecryptLeak {
 
         try {
             while (entries.hasMoreElements()) {
-                pubkey = Crypto.getPrivateKey(Crypto.sha3().digest(Arrays.concatenate(pubkey, derivationKey)));
+                pubkey = Crypto.getSharedKey(pubkey, derivationKey);
                 ZipEntry entry = entries.nextElement();
                 InputStream is = zip.getInputStream(entry);
-                int available = is.available(), padding = 16 - available % 16;
-                byte[] chunk = new byte[available + padding];
-                is.read(chunk);
+                int available = is.available();//, padding = 16 - available % 16;
+                byte[] chunk = new byte[available];//, pad = new byte[padding];
+                int count = 0;
+                while((count += is.read(chunk, count, available - count)) < available) {}
                 chunk = Crypto.aesDecrypt(chunk, pubkey);
-                os.write(chunk, 0, available);
+                os.write(chunk);
                 is.close();
             }
         } catch (IOException e) {

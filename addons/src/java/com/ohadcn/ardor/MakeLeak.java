@@ -49,11 +49,16 @@ public class MakeLeak {
         byte[] chunk = new byte[chunkSize], buffer = new byte[0], temp;
         for(int i = 0; i < chunks; i++) {
             try {
-                pubkey = Crypto.getPrivateKey(Crypto.sha3().digest(Arrays.concatenate(pubkey, derivationKey)));
+                pubkey = Crypto.getSharedKey(pubkey, derivationKey);
                 int size = is.read(chunk);
+                if(size != chunk.length) {
+                    byte[] buf = new byte[size];
+                    System.arraycopy(chunk, 0, buf, 0, size);
+                    chunk = buf;
+                }
                 temp = Crypto.aesEncrypt(chunk, pubkey);
                 zip.putNextEntry(new ZipEntry("f" + i));
-                zip.write(chunk, 0, size);
+                zip.write(temp);
                 zip.closeEntry();
             } catch (IOException e) {
                 System.out.println("can't read from " + fileToEncrypt);
