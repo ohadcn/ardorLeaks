@@ -14,6 +14,7 @@ import java.util.zip.ZipOutputStream;
 
 import nxt.account.Account;
 import nxt.crypto.Crypto;
+import nxt.util.Convert;
 
 public class MakeLeak {
     public static void main(String[] args) {
@@ -39,12 +40,12 @@ public class MakeLeak {
             return;
         }
 
-//        byte[] privkey = Crypto.getPrivateKey(args[2]);
         byte[] pubkey = Crypto.getPublicKey(args[2]);
         byte[] derivationKey = Crypto.getPrivateKey(Crypto.sha3().digest(pubkey));
-        long id = Account.getId(pubkey);
+//        long id = Account.getId(pubkey);
+        String id = Convert.rsAccount(Account.getId(pubkey));
 
-        System.out.println("account to pay to: " + Long.toUnsignedString(id));
+        System.out.println("account to pay: " + id);
 
         byte[] chunk = new byte[chunkSize], buffer = new byte[0], temp;
         for(int i = 0; i < chunks; i++) {
