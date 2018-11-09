@@ -23,6 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 import nxt.account.Account;
 import nxt.crypto.Crypto;
+import nxt.util.Convert;
 
 public class DecryptLeak {
     public static void main(String[] args) {
@@ -32,7 +33,6 @@ public class DecryptLeak {
         String fileToDecrypt = args[0];
         OutputStream os;
         ZipFile zip;
-        int chunkSize, fileSize;
         try {
             os = new FileOutputStream(fileToDecrypt + ".orig");
             zip = new ZipFile(fileToDecrypt + ".zip");
@@ -44,7 +44,12 @@ public class DecryptLeak {
             return;
         }
 
-        byte[] pubkey = Crypto.getPublicKey(args[1]);
+        byte[] pubkey;
+        try {
+            pubkey = Convert.parseHexString(args[1]);
+        } catch (NumberFormatException _) {
+            pubkey = Crypto.getPublicKey(args[1]);
+        }
         byte[] derivationKey = Crypto.getPrivateKey(Crypto.sha3().digest(pubkey));
 
         Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -54,8 +59,8 @@ public class DecryptLeak {
                 pubkey = Crypto.getSharedKey(pubkey, derivationKey);
                 ZipEntry entry = entries.nextElement();
                 InputStream is = zip.getInputStream(entry);
-                int available = is.available();//, padding = 16 - available % 16;
-                byte[] chunk = new byte[available];//, pad = new byte[padding];
+                int available = is.available();
+                byte[] chunk = new byte[available];
                 int count = 0;
                 while((count += is.read(chunk, count, available - count)) < available) {}
                 chunk = Crypto.aesDecrypt(chunk, pubkey);
